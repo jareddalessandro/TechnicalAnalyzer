@@ -9,4 +9,5 @@
 3. Open x86 Native Tools Command Prompt for VS (If using Python x64 use x64 Native Tools) (This requires Visual Studio Builder Tools)
 4. Navigate to C:\ta-lib\c\make\cdr\win32\msvc and run nmake
 5. pip install ta-lib
+6. If errors are encountered visit https://github.com/mrjbq7/ta-lib for instructions
 
