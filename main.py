@@ -1,8 +1,9 @@
 # Finnhub API Documentation: https://finnhub.io/docs/api/quote
-# TAAIO API Documentation: https://taapi.io/documentation/integration/manually/ NOT USING RIGHT NOW BECAUSE NOT HIGH FREQUENCY ENOUGH AND POOR DOCUMENTATION AND DOESNT SEEM TO SUPPORT POST REQUESTS FOR BULK
 # TA-LIB Library https://github.com/mrjbq7/ta-lib
 # Use Finnhub for pricing queries and TA-Lib for technicals
+# For UTC timestamps: https://www.unixtimestamp.com/
 
+import websocket
 from os import error
 import finnhub
 import datetime
@@ -17,72 +18,115 @@ from talib import stream
 from talib.abstract import *
 
 finnhub_key = 'c6j6kjaad3ieecomvqh0'
-taapi_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbHVlIjoiNjM1ZjE2YjJmYzVhOGFkZmVjZGM3MDIxIiwiaWF0IjoxNjY3MTc2MTE0LCJleHAiOjMzMTcxNjQwMTE0fQ.eqSZQiL9eCyfw7oFnaG5QsfVjpkFpWkRPgDFn8krksY'
 symbol = "SPY"
+
+buy_points = 0
+sell_points = 0
 
 def main():
     now = int(time.time())
     previous = (now - 12060) # 201 mins in the past, which will pull 200 entries
 
-    now = 1667244600
-    previous = 1667232540 # 201 mins in the past, which will pull 200 entries
+    #now = 1667244600
+    #previous = 1667232540 # 201 mins in the past, which will pull 200 entries
         # Alert: This will likely need to be different so we get 200 entries for all time frames
 
     client = finnhub.Client(api_key=finnhub_key)
 
-    one_min_candles = client.stock_candles(symbol=symbol, resolution=1, _from=previous, to=now)
-    five_min_candles = client.stock_candles(symbol=symbol, resolution=5, _from=previous, to=now)
+    while True:
+        # Reset point counters
+        buy_points = 0
+        sell_points = 0
 
-    candle_count = len(one_min_candles['c']) # Get the count of how many candles we have
+        one_min_candles = None
+        five_min_candles = None
 
-    if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
-        print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
-    else: 
-        print("SUCCESS: Obtained candle data from Finnhub")
- 
 
-    # Create an np ndarray to be used by TA-LIB in OHLCV format
-    one_min_data = {
-        'open': np.array(one_min_candles['o']),
-        'high': np.array(one_min_candles['h']),
-        'low': np.array(one_min_candles['l']),
-        'close': np.array(one_min_candles['c']),
-        'volume': np.array(one_min_candles['v'])
-    }
-    five_min_data = {
-        'open': np.array(five_min_candles['o']),
-        'high': np.array(five_min_candles['h']),
-        'low': np.array(five_min_candles['l']),
-        'close': np.array(five_min_candles['c']),
-        'volume': np.array(five_min_candles['v'])
-    }
+        one_min_candles = client.stock_candles(symbol=symbol, resolution=1, _from=previous, to=now)
+        five_min_candles = client.stock_candles(symbol=symbol, resolution=5, _from=previous, to=now)
 
-   
-    one_min_rsi = get_rsi(one_min_data)
-    five_min_rsi = get_rsi(five_min_data)
 
-    one_min_ma_200 = get_ma_200(one_min_data)
-    one_min_ma_120 = get_ma_120(one_min_data)
-    one_min_ma_50 = get_ma_50(one_min_data)
+        if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
+            print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
+        else:
+            print('------------------------------------------')
+            print("SUCCESS: Obtained candle data from Finnhub")
 
-    five_min_ma_200 = get_ma_200(five_min_data)
-    five_min_ma_120 = get_ma_120(five_min_data)
-    five_min_ma_50 = get_ma_50(five_min_data)
+        candle_count = len(one_min_candles['c']) # Get the count of how many candles we have
+
+        # Create an np ndarray to be used by TA-LIB in OHLCV format
+        one_min_data = {
+            'open': np.array(one_min_candles['o']),
+            'high': np.array(one_min_candles['h']),
+            'low': np.array(one_min_candles['l']),
+            'close': np.array(one_min_candles['c']),
+            'volume': np.array(one_min_candles['v'])
+        }
+        five_min_data = {
+            'open': np.array(five_min_candles['o']),
+            'high': np.array(five_min_candles['h']),
+            'low': np.array(five_min_candles['l']),
+            'close': np.array(five_min_candles['c']),
+            'volume': np.array(five_min_candles['v'])
+        }
+
     
-    one_min_ema_200 = get_ema_200(one_min_data)
-    one_min_ema_120 = get_ema_120(one_min_data)
-    one_min_ema_50 = get_ema_50(one_min_data)
-    one_min_ema_9 = get_ema_9(one_min_data)
-    
-    five_min_ema_200 = get_ema_200(five_min_data)
-    five_min_ema_120 = get_ema_120(five_min_data)
-    five_min_ema_50 = get_ema_50(five_min_data)
-    five_min_ema_9 = get_ema_9(five_min_data)
+        
 
-    macd, macdsignal, macdhist = get_macd(one_min_data)
-    
-    print('\n')
-    print(macd, macdsignal, macdhist)
+        current_price = client.quote(symbol=symbol) # THIS IS NOT WORKING FAST ENOUGH, WILL REQUIRE WEBSOCKET
+        current_price = current_price['c'] 
+
+        #print(macd, macdsignal, macdhist)
+        print('Current Price:', current_price)
+
+        # Get indicator values and set points
+        one_min_rsi, buy_points, sell_points = analyze_rsi(one_min_data, buy_points, sell_points)
+        five_min_rsi, buy_points, sell_points = analyze_rsi(five_min_data, current_price, buy_points, sell_points, 1.2)
+        
+        
+        print('One Min RSI:', one_min_rsi)
+        print('Five Min RSI:', five_min_rsi)
+        print("BUY: ", buy_points)
+        print("SELL: ", sell_points)
+
+
+
+
+
+
+
+############ INDICATOR Logic Functions ##############
+# Each function will need to add points to either the buy or sell counter 
+# Each function should take:
+    # 'data' as an input, which will contain candle data in OHLCV format
+    # buy_points as an input which will represent the growing quantity of buy indications seen
+    # sell_points as an input will will represent the growing quantity of sell indications seen
+
+def analyze_rsi(data, buy_points, sell_points, weight=1):
+    rsi = get_rsi(data)
+    if (rsi > 68):
+        sell_points += (5 * weight)
+    elif (rsi < 32):
+        sell_points += (5 * weight)
+    return rsi, buy_points, sell_points
+
+#approaching 50ema from below = increase sell
+#approaching 50 ema from above = increase buy
+#break through 50 ema from below = increase buy hard
+#break through 50 ema from above = increase sell hard
+def analyze_ema_50(data, current_price, buy_points, sell_points, weight=1):
+    ema = get_ema_50(data)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -130,7 +174,6 @@ def get_ma_200(data):
 def get_macd(data):
     macd, macdsignal, macdhist = MACD(data)
     return round(macd[len(macd)-1], 4), round(macdsignal[len(macd)-1], 4), round(macdhist[len(macd)-1], 4)
-
 
 
 
