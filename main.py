@@ -12,6 +12,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import numpy as np
 from numpy import datetime64
+import pandas as pd
 from talib import abstract
 
 finnhub_key = 'c6j6kjaad3ieecomvqh0'
@@ -34,6 +35,8 @@ def main():
 
     finnhub_candles = client.stock_candles(symbol=symbol, resolution=resolution, _from=previous, to=now)
     candle_count = len(finnhub_candles['c']) # Get the count of how many candles we have
+
+    dataframe = pd.DataFrame(finnhub_candles)
 
     if finnhub_candles['s'] != 'ok':
         print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
@@ -72,8 +75,8 @@ def main():
     #np_array = np.array(finnhub_candles)
     # np_array = {'open': 'array'(finnhub_candles['o']), 'high': 'array'(finnhub_candles['h']), 'low': 'array'(finnhub_candles['l']), 'close': 'array'(finnhub_candles['c']), 'volume': tuple(finnhub_candles['v'])}
     #print(np_array)
-    SMA = abstract.SMA
-    RSI = abstract.RSI
+    #SMA = abstract.SMA
+    #RSI = abstract.RSI
 
     # This seems to be pretty accurate actually, it requires at least 14 increments of data
     rsi_field = RSI(one_min_data, timeperiod=14)
