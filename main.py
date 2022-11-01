@@ -13,7 +13,7 @@ from email.mime.text import MIMEText
 import numpy as np
 from numpy import datetime64
 import pandas as pd
-from talib import abstract
+from talib.abstract import *
 
 finnhub_key = 'c6j6kjaad3ieecomvqh0'
 taapi_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbHVlIjoiNjM1ZjE2YjJmYzVhOGFkZmVjZGM3MDIxIiwiaWF0IjoxNjY3MTc2MTE0LCJleHAiOjMzMTcxNjQwMTE0fQ.eqSZQiL9eCyfw7oFnaG5QsfVjpkFpWkRPgDFn8krksY'
@@ -22,7 +22,7 @@ symbol = "SPY"
 
 def main():
     now = int(time.time())
-    previous = (now - 1) # 31 mins in the past, which will pull 30 entries
+    previous = (now - 1860) # 31 mins in the past, which will pull 30 entries
 
     now = 1667244600
     previous = 1667242800
@@ -35,8 +35,6 @@ def main():
 
     finnhub_candles = client.stock_candles(symbol=symbol, resolution=resolution, _from=previous, to=now)
     candle_count = len(finnhub_candles['c']) # Get the count of how many candles we have
-
-    dataframe = pd.DataFrame(finnhub_candles)
 
     if finnhub_candles['s'] != 'ok':
         print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
@@ -59,7 +57,7 @@ def main():
 
   
 
-    # Create an np ndarray to be used by TA-LIB
+    # Create an np ndarray to be used by TA-LIB in OHLCV format
     one_min_data = {
         'open': np.array(finnhub_candles['o']),
         'high': np.array(finnhub_candles['h']),
@@ -75,14 +73,17 @@ def main():
     #np_array = np.array(finnhub_candles)
     # np_array = {'open': 'array'(finnhub_candles['o']), 'high': 'array'(finnhub_candles['h']), 'low': 'array'(finnhub_candles['l']), 'close': 'array'(finnhub_candles['c']), 'volume': tuple(finnhub_candles['v'])}
     #print(np_array)
+
+
     #SMA = abstract.SMA
     #RSI = abstract.RSI
 
     # This seems to be pretty accurate actually, it requires at least 14 increments of data
     rsi_field = RSI(one_min_data, timeperiod=14)
+    ema_field = EMA(one_min_data)
     current_rsi = rsi_field[len(rsi_field)-1]
     
-    print(rsi_field)
+    print(ema_field)
     print(current_rsi)
 
 
