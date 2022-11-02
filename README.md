@@ -1,7 +1,6 @@
 ## Prerequisites
 ### Python, tested with both Python 7 and python 8.
-* pip install numpy
-* pip install finnhub-python
+* pip install -r requirements.txt 
 ### Install TA-LIB
 #### You can try to place the precompiled x86 ta-lib folder included in this project and at C:\ to skip steps 1-4.
 1. Download ta-lib-0.4.0-msvc.zip from https://sourceforge.net/projects/ta-lib/
