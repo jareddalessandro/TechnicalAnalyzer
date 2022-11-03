@@ -8,7 +8,6 @@
     # add user defined levels
     # add price correlation analysis for dxy/vix
 
-import websocket
 from os import error
 import finnhub
 import datetime
@@ -56,10 +55,8 @@ def main():
             print('------------------------------------------')
             print("SUCCESS: Obtained candle data from Finnhub")
 
-        candle_count = len(five_min_candles['c']) # Get the count of how many candles we have
-        
-        print('count: ', candle_count)
-        print(five_min_candles)
+        candle_count = len(one_min_candles['c']) # Get the count of how many candles we have
+
         # Create an np ndarray to be used by TA-LIB in OHLCV format
         one_min_data = {
             'open': np.array(one_min_candles['o']),
@@ -79,23 +76,22 @@ def main():
         current_price = client.quote(symbol=symbol) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
         current_price = current_price['c'] 
 
-        
-
         #print(macd, macdsignal, macdhist)
         print('Current Price:', current_price)
 
         # Get indicator values and set points
         one_min_rsi, buy_points, sell_points = analyze_rsi(one_min_data, current_price, buy_points, sell_points)
         five_min_rsi, buy_points, sell_points = analyze_rsi(five_min_data, current_price, buy_points, sell_points, 1.2)
+        one_min_ema_9, buy_points, sell_points = analyze_ema_50(one_min_data, current_price, buy_points, sell_points)
+        five_min_ema_9, buy_points, sell_points = analyze_ema_50(five_min_data, current_price, buy_points, sell_points)
+        one_min_ema_50, buy_points, sell_points = analyze_ema_50(one_min_data, current_price, buy_points, sell_points)
+        five_min_ema_50, buy_points, sell_points = analyze_ema_50(five_min_data, current_price, buy_points, sell_points, 1.2)
         
-        
-        print('One Min RSI:', one_min_rsi)
-        print('Five Min RSI:', five_min_rsi)
         print("BUY: ", buy_points)
         print("SELL: ", sell_points)
 
         time.sleep(2)
-
+        exit()
 
 
 
@@ -123,10 +119,44 @@ def analyze_rsi(data, current_price, buy_points, sell_points, weight=1):
 #break through 50 ema from below = increase buy hard
 #break through 50 ema from above = increase sell hard
 # has touched? is above is below
+def analyze_ema_9(data, current_price, buy_points, sell_points, weight=1):
+    ema = get_ema_9(data) 
+    
+    if (is_close_to_line(current_price, ema)):
+        # Approaching a line of resistence
+        if (is_below_line(current_price, ema) and is_short_term_going_up(current_price, data)):
+            sell_points += 5 * weight
+        # Approaching a line of support
+        elif (is_above_line(current_price, ema) and is_short_term_going_down(current_price, data)):
+            buy_points += 5 * weight
+        # Broke through the line of resistence
+        elif (is_above_line(current_price, ema) and is_short_term_going_up(current_price, data)):
+            buy_points += 10 * weight
+        # Broke through the line of support
+        elif (is_below_line(current_price, ema) and is_short_term_going_down(current_price, data)):
+            sell_points += 10 * weight
+
+    return ema, buy_points, sell_points
+
+
 def analyze_ema_50(data, current_price, buy_points, sell_points, weight=1):
-    ema = get_ema_50(data)
+    ema = get_ema_50(data) 
+    
+    if (is_close_to_line(current_price, ema)):
+        # Approaching a line of resistence
+        if (is_below_line(current_price, ema) and is_short_term_going_up(current_price, data)):
+            sell_points += 5 * weight
+        # Approaching a line of support
+        elif (is_above_line(current_price, ema) and is_short_term_going_down(current_price, data)):
+            buy_points += 5 * weight
+        # Broke through the line of resistence
+        elif (is_above_line(current_price, ema) and is_short_term_going_up(current_price, data)):
+            buy_points += 10 * weight
+        # Broke through the line of support
+        elif (is_below_line(current_price, ema) and is_short_term_going_down(current_price, data)):
+            sell_points += 10 * weight
 
-
+    return ema, buy_points, sell_points
 
 
 
@@ -137,6 +167,24 @@ def analyze_ema_50(data, current_price, buy_points, sell_points, weight=1):
 # maybe create functions for is it close to line, did it reject, did it break, did it hold
 ############ Direction Behavior Helper Functions ##############
 #def approaching_line(current_price, line):
+
+def is_above_line(current_price, line):
+    if current_price > line:
+        return True
+    else:
+        return False
+
+def is_below_line(current_price, line):
+    if current_price < line:
+        return True
+    else:
+        return False
+
+def is_close_to_line(current_price, line):
+    if (current_price - line <= .30 or line - current_price <= .30):
+        return True
+    else:
+        return False
 
 def get_user_defined_levels():
     user_defined_levels = []
@@ -149,6 +197,7 @@ def get_user_defined_levels():
             user_defined_levels.append(float(level))
     return user_defined_levels
 
+# Get the lowest value for the range provided
 def get_range_low(data):
     lowest_low = data['open'][0]
     lows = []
@@ -158,7 +207,7 @@ def get_range_low(data):
             lowest_low = lows[i]
     return lowest_low
 
-
+# Get the highest value for the range provided
 def get_range_high(data):
     highest_high = data['open'][0]
     highs = []
@@ -167,6 +216,21 @@ def get_range_high(data):
         if highs[i] >= highest_high:
             highest_high = highs[i]
     return highest_high
+
+# Check to see if current price is higher than last candle close
+def is_short_term_going_up(current_price, data):
+    length = len(data['close'])
+    if current_price >= data['close'][length -1]:
+        return True
+    else:
+        return False
+# Check to see if current price is higher than last candle close
+def is_short_term_going_down(current_price, data):
+    length = len(data['close'])
+    if current_price <= data['close'][length -1]:
+        return True
+    else:
+        return False
 
 
 ############ INDICATOR Wrapper Functions ##############
