@@ -6,6 +6,7 @@
     # Need to figure out math for approaching emas and rejecting emas
     # Maybe test using Alpaca markets. https://app.alpaca.markets/paper/dashboard/overview
     # add user defined levels
+    # check if at lowest lows or highest highs
     # add price correlation analysis for dxy/vix
 
 from os import error
@@ -19,8 +20,8 @@ from numpy import datetime64
 from talib import stream
 from talib.abstract import *
 
-finnhub_key = 'c6j6kjaad3ieecomvqh0'
-symbol = "SPY"
+FINNHUB_KEY = 'c6j6kjaad3ieecomvqh0'
+SYMBOL = "SPY"
 
 buy_points = 0
 sell_points = 0
@@ -35,7 +36,7 @@ def main():
     previous_five_min = (now - 60000) # 5 x 201 mins in teh past, which will pull 200 entries for 5 min
 
 
-    client = finnhub.Client(api_key=finnhub_key)
+    client = finnhub.Client(api_key=FINNHUB_KEY)
 
     while True:
         # Reset point counters
@@ -45,8 +46,8 @@ def main():
         five_min_candles = None
 
 
-        one_min_candles = client.stock_candles(symbol=symbol, resolution=1, _from=previous_one_min, to=now)
-        five_min_candles = client.stock_candles(symbol=symbol, resolution=5, _from=previous_five_min, to=now)
+        one_min_candles = client.stock_candles(symbol=SYMBOL, resolution=1, _from=previous_one_min, to=now)
+        five_min_candles = client.stock_candles(symbol=SYMBOL, resolution=5, _from=previous_five_min, to=now)
 
 
         if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
@@ -73,29 +74,48 @@ def main():
             'volume': np.array(five_min_candles['v'])
         }
 
-        current_price = client.quote(symbol=symbol) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
+        current_price = client.quote(symbol=SYMBOL) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
         current_price = current_price['c'] 
 
         #print(macd, macdsignal, macdhist)
         print('Current Price:', current_price)
 
         # Get indicator values and set points
-        one_min_rsi, buy_points, sell_points = analyze_rsi(one_min_data, current_price, buy_points, sell_points)
-        five_min_rsi, buy_points, sell_points = analyze_rsi(five_min_data, current_price, buy_points, sell_points, 1.2)
-        one_min_ema_9, buy_points, sell_points = analyze_ema_50(one_min_data, current_price, buy_points, sell_points)
-        five_min_ema_9, buy_points, sell_points = analyze_ema_50(five_min_data, current_price, buy_points, sell_points)
+        one_min_rsi, buy_points, sell_points = analyze_rsi(one_min_data, buy_points, sell_points)
+        five_min_rsi, buy_points, sell_points = analyze_rsi(five_min_data, buy_points, sell_points, 1.2)
+        one_min_ema_9, buy_points, sell_points = analyze_ema_9(one_min_data, current_price, buy_points, sell_points)
+        five_min_ema_9, buy_points, sell_points = analyze_ema_9(five_min_data, current_price, buy_points, sell_points, 1.2)
         one_min_ema_50, buy_points, sell_points = analyze_ema_50(one_min_data, current_price, buy_points, sell_points)
         five_min_ema_50, buy_points, sell_points = analyze_ema_50(five_min_data, current_price, buy_points, sell_points, 1.2)
         
         print("BUY: ", buy_points)
         print("SELL: ", sell_points)
+        print("One_min_ema_9 ", one_min_ema_9)
+        print("One_min_ema_50 ", one_min_ema_50)
+        print("five_min_ema_9 ", five_min_ema_9)
+        print("five_min_ema_50 ", five_min_ema_50)
 
-        time.sleep(2)
-        exit()
+        time.sleep(3)
+        
 
 
 
 
+
+
+
+
+
+def get_user_defined_levels():
+    user_defined_levels = []
+    print("Please enter all specfiic critical levels you would like the bot to monitor.")
+    while True:
+        level = (input())
+        if len(level) < 1:
+            break
+        else:
+            user_defined_levels.append(float(level))
+    return user_defined_levels
 
 
 ############ INDICATOR Logic Functions ##############
@@ -106,7 +126,7 @@ def main():
     # sell_points as an input will will represent the growing quantity of sell indications seen
     # weight, a modifier we can use to determine how crucial each specific usage of the function is
 
-def analyze_rsi(data, current_price, buy_points, sell_points, weight=1):
+def analyze_rsi(data, buy_points, sell_points, weight=1):
     rsi = get_rsi(data)
     if (rsi > 68):
         sell_points += (5 * weight)
@@ -114,11 +134,7 @@ def analyze_rsi(data, current_price, buy_points, sell_points, weight=1):
         buy_points += (5 * weight)
     return rsi, buy_points, sell_points
 
-#approaching 50ema from below = increase sell
-#approaching 50 ema from above = increase buy
-#break through 50 ema from below = increase buy hard
-#break through 50 ema from above = increase sell hard
-# has touched? is above is below
+
 def analyze_ema_9(data, current_price, buy_points, sell_points, weight=1):
     ema = get_ema_9(data) 
     
@@ -164,9 +180,7 @@ def analyze_ema_50(data, current_price, buy_points, sell_points, weight=1):
 
 
 
-# maybe create functions for is it close to line, did it reject, did it break, did it hold
 ############ Direction Behavior Helper Functions ##############
-#def approaching_line(current_price, line):
 
 def is_above_line(current_price, line):
     if current_price > line:
@@ -181,21 +195,11 @@ def is_below_line(current_price, line):
         return False
 
 def is_close_to_line(current_price, line):
-    if (current_price - line <= .30 or line - current_price <= .30):
+    sum = current_price - line
+    if (sum <= .30 and sum >= -.30):
         return True
     else:
         return False
-
-def get_user_defined_levels():
-    user_defined_levels = []
-    print("Please enter all specfiic critical levels you would like the bot to monitor.")
-    while True:
-        level = (input())
-        if len(level) < 1:
-            break
-        else:
-            user_defined_levels.append(float(level))
-    return user_defined_levels
 
 # Get the lowest value for the range provided
 def get_range_low(data):
@@ -224,6 +228,7 @@ def is_short_term_going_up(current_price, data):
         return True
     else:
         return False
+
 # Check to see if current price is higher than last candle close
 def is_short_term_going_down(current_price, data):
     length = len(data['close'])
