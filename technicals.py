@@ -2,9 +2,11 @@ import numpy as np
 from numpy import datetime64
 from talib import stream
 from talib.abstract import *
+import pandas as pd
+import datetime as dt
 
 ############ INDICATOR Wrapper Functions ##############
-# Note: Don't use stream feature as it was returning same data for ema/ma/sma
+# Note: Don't use TA.stream feature as it was returning same data for ema/ma/sma
 # Most of these technical functions returns an array of data, one value for each candle, however we just want the most recent value.
 
 def get_rsi(data, period=14):
@@ -50,3 +52,16 @@ def get_ma_200(data):
 def get_macd(data):
     macd, macdsignal, macdhist = MACD(data)
     return round(macd[len(macd)-1], 4), round(macdsignal[len(macd)-1], 4), round(macdhist[len(macd)-1], 4)
+
+# Get VWAP and Lower and Higher bands two sigma
+def get_vwap(data):
+    df = pd.DataFrame(data)
+    df['Cum_Vol'] = df['volume'].cumsum()
+    df['Cum_Vol_Price'] = (df['volume'] * (df['high'] + df['low'] + df['close'] ) / 3).cumsum()
+    df['VWAP'] = df['Cum_Vol_Price'] / df['Cum_Vol']
+    df['VWAP_High'] = df["VWAP"] + (df["VWAP"].std() * 2)
+    df['VWAP_Low'] = df["VWAP"] - (df["VWAP"].std() * 2)
+
+    return round(df['VWAP'].iloc[-1], 3), round(df['VWAP_High'].iloc[-1], 3), round(df['VWAP_Low'].iloc[-1], 3)
+
+        

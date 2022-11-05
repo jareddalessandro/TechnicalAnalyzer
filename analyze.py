@@ -13,7 +13,7 @@ import numpy as np
 def analyze_rsi(data, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1):
     rsi = TA.get_rsi(data)
     if (rsi > 68):
-        analysis += '\nRSI becoming overbought'
+        analysis += "\nRSI becoming overbought"
         BEARISH_POINTS += (5 * weight)
     elif (rsi < 32):
         analysis += '\nRSI becoming oversold'
