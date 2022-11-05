@@ -5,8 +5,9 @@
 # TODO:
     # Need to figure out math for approaching emas and rejecting emas
     # Maybe test using Alpaca markets. https://app.alpaca.markets/paper/dashboard/overview
-    # add user defined levels
-    # check if at lowest lows or highest highs
+    # Add vwap and bands
+    # Get larger time frames for 120 and 200 MAs 
+    # Add logic for rejection or support holds
     # add price correlation analysis for dxy/vix
 
 from os import error
@@ -29,9 +30,9 @@ def main():
 
     user_defined_levels = get_user_defined_levels()
     now = int(time.time())
-
+    now = int('1667592000') # 11/4 10am
     previous_one_min = (now - 12060) # 201 mins in the past, which will pull 200 entries for 1 min
-    previous_five_min = (now - 60000) # 5 x 201 mins in the past, which will pull 200 entries for 5 min
+    previous_five_min = (now - 60060) # 5 x 201 mins in the past, which will pull 200 entries for 5 min
 
 
     client = finnhub.Client(api_key=FINNHUB_KEY)
@@ -46,7 +47,11 @@ def main():
 
         one_min_candles = client.stock_candles(symbol=SYMBOL, resolution=1, _from=previous_one_min, to=now)
         five_min_candles = client.stock_candles(symbol=SYMBOL, resolution=5, _from=previous_five_min, to=now)
+        current_price = client.quote(symbol=SYMBOL) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
+        current_price = float(current_price['c'])
+        current_price = 371.28
 
+        print('Current Price:', current_price)
 
         if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
             print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
@@ -54,8 +59,9 @@ def main():
             print('------------------------------------------')
             print("SUCCESS: Obtained candle data from Finnhub")
 
-        candle_count = len(one_min_candles['c']) # Get the count of how many candles we have
-
+        candle_count = len(five_min_candles['c']) # Get the count of how many candles we have
+        print('Candle Count: ', candle_count)
+        
         # Create an np ndarray to be used by TA-LIB in OHLCV format
         one_min_data = {
             'open': np.array(one_min_candles['o']),
@@ -72,17 +78,15 @@ def main():
             'volume': np.array(five_min_candles['v'])
         } 
 
-        current_price = client.quote(symbol=SYMBOL) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
-        current_price = current_price['c'] 
-
-        #print(macd, macdsignal, macdhist)
-        print('Current Price:', current_price)
+        print(five_min_data['close'])
 
         analysis =''
         # Analyze indicator values and set points
+        one_range_low, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
+        one_range_high, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         one_min_rsi, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_rsi(one_min_data, BULLISH_POINTS, analysis, BEARISH_POINTS)
         five_min_rsi, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_rsi(five_min_data, BULLISH_POINTS, analysis, BEARISH_POINTS, 1.2)
-        one_min_ema_9, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_9(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS,analysis)
+        one_min_ema_9, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_9(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.0)
         five_min_ema_9, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_9(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         one_min_ema_50, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_50(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis)
         five_min_ema_50, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_50(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)

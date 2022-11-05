@@ -57,19 +57,19 @@ def analyze_user_defined_levels(levels, data, current_price, BULLISH_POINTS, BEA
         if (is_close_to_line(current_price, level)):
             # Approaching a line of resistence
             if (is_below_line(current_price, level) and is_short_term_going_up(current_price, data)):
-                analysis += f"\nApproaching line of resistence - ${level}"
+                analysis += f"\nApproaching line of resistence - {level}"
                 BEARISH_POINTS += 5 * weight
             # Approaching a line of support
             elif (is_above_line(current_price, level) and is_short_term_going_down(current_price, data)):
-                analysis += f'\nApproaching a line of support - ${level}'
+                analysis += f'\nApproaching a line of support - {level}'
                 BULLISH_POINTS += 5 * weight
             # Broke through the line of resistence
             elif (is_above_line(current_price, level) and is_short_term_going_up(current_price, data)):
-                analysis += f'\nApproaching a line of support - ${level}'
+                analysis += f'\nBroke through a line of support - {level}'
                 BULLISH_POINTS += 10 * weight
             # Broke through the line of support
             elif (is_below_line(current_price, level) and is_short_term_going_down(current_price, data)):
-                analysis += f'\nBroke through the line of support - ${level}'
+                analysis += f'\nBroke through the line of support - {level}'
                 BEARISH_POINTS += 10 * weight
 
     return BULLISH_POINTS, BEARISH_POINTS, analysis
@@ -82,19 +82,19 @@ def analyze_line(data, line, current_price, BULLISH_POINTS, BEARISH_POINTS, anal
     if (is_close_to_line(current_price, line)):
         # Approaching a line of resistence
         if (is_below_line(current_price, line) and is_short_term_going_up(current_price, data)):
-            analysis += f"\nApproaching line of resistence - ${line}"
+            analysis += f"\nApproaching line of resistence - {line}"
             BEARISH_POINTS += 5 * weight
         # Approaching a line of support
         elif (is_above_line(current_price, line) and is_short_term_going_down(current_price, data)):
-            analysis += f'\nApproaching a line of support - ${line}'
+            analysis += f'\nApproaching a line of support - {line}'
             BULLISH_POINTS += 5 * weight
         # Broke through the line of resistence
         elif (is_above_line(current_price, line) and is_short_term_going_up(current_price, data)):
-            analysis += f'\nApproaching a line of support - ${line}'
+            analysis += f'\nBroke through a line of support - {line}'
             BULLISH_POINTS += 10 * weight
         # Broke through the line of support
         elif (is_below_line(current_price, line) and is_short_term_going_down(current_price, data)):
-            analysis += f'\nBroke through the line of support - ${line}'
+            analysis += f'\nBroke through the line of support - {line}'
             BEARISH_POINTS += 10 * weight
     return line, BULLISH_POINTS, BEARISH_POINTS, analysis
 
