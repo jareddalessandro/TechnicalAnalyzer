@@ -5,7 +5,6 @@
 # TODO:
     # Use Alpaca markets for testing. https://app.alpaca.markets/paper/dashboard/overview
     # Replace quote() for current_price with websocket
-    # Add vwap and bands
     # Add logic for rejection or support holds
     # Add macd
     # add price correlation analysis for dxy/vix
@@ -23,11 +22,19 @@ from talib.abstract import *
 import technicals as TA
 import analyze as Analysis
 import time
+from jproperties import Properties
 
-FINNHUB_KEY = 'c6j6kjaad3ieecomvqh0'
-SYMBOL = "SPY"
+
+# Load properties from config.properties
+configs = Properties()
+with open ('config.properties', 'rb') as config_file:
+    configs.load(config_file)
 
 def main():
+
+
+    FINNHUB_KEY = configs.get('FINNHUB_KEY').data
+    SYMBOL = configs.get('SYMBOL').data
 
     user_defined_levels = get_user_defined_levels()
     now = int(time.time())
@@ -158,7 +165,7 @@ def get_user_defined_levels():
     return user_defined_levels
 
 
-
+# Get the utc time value for market open, market open is configuable in config.properties 
 def get_market_open_time():
     now = int(time.time())
     local = time.localtime(now)
@@ -167,7 +174,7 @@ def get_market_open_time():
     month = local.tm_mon
     weekday = local.tm_wday
     yday = local.tm_yday
-    t = (year, month, day, 6, 30, 0, weekday, yday, 0)
+    t = (year, month, day, int(configs.get('MARKET_OPEN_HOUR').data), 30, 0, weekday, yday, 0)
 
     market_open_time = time.mktime(t)
     return (round(int(market_open_time),0))

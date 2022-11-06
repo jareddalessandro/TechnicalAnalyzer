@@ -2,3 +2,5 @@ websocket
 finnhub-python
 time
 numpy==1.23
+pandas
+jproperties
