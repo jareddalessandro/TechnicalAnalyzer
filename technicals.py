@@ -53,7 +53,8 @@ def get_macd(data):
     macd, macdsignal, macdhist = MACD(data)
     return round(macd[len(macd)-1], 4), round(macdsignal[len(macd)-1], 4), round(macdhist[len(macd)-1], 4)
 
-# Get VWAP and Lower and Higher bands two sigma
+# Get Volume Weighted Average Price (VWAP) and Lower and Higher bands - two sigma lower and higher
+# This isn't giving the same results as TV and webull, maybe due to the method to calculate STD   
 def get_vwap(data):
     df = pd.DataFrame(data)
     df['Cum_Vol'] = df['volume'].cumsum()

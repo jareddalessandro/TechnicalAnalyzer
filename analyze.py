@@ -65,7 +65,7 @@ def analyze_user_defined_levels(levels, data, current_price, BULLISH_POINTS, BEA
                 BULLISH_POINTS += 5 * weight
             # Broke through the line of resistence
             elif (is_above_line(current_price, level) and is_short_term_going_up(current_price, data)):
-                analysis += f'\nBroke through a line of support - {level}'
+                analysis += f'\nBroke through a line of resistence - {level}'
                 BULLISH_POINTS += 10 * weight
             # Broke through the line of support
             elif (is_below_line(current_price, level) and is_short_term_going_down(current_price, data)):
@@ -74,6 +74,12 @@ def analyze_user_defined_levels(levels, data, current_price, BULLISH_POINTS, BEA
 
     return BULLISH_POINTS, BEARISH_POINTS, analysis
 
+def analyze_vwap(data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1):
+    vwap, vwap_upper, vwap_lower = TA.get_vwap(data)
+    vwap, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
+    vwap_upper, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap_upper, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
+    vwap_lower, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap_lower, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
+    return BULLISH_POINTS, BEARISH_POINTS, analysis
 
 
 ############ Direction Behavior Helper Functions ##############
@@ -90,7 +96,7 @@ def analyze_line(data, line, current_price, BULLISH_POINTS, BEARISH_POINTS, anal
             BULLISH_POINTS += 5 * weight
         # Broke through the line of resistence
         elif (is_above_line(current_price, line) and is_short_term_going_up(current_price, data)):
-            analysis += f'\nBroke through a line of support - {line}'
+            analysis += f'\nBroke through a line of resistence - {line}'
             BULLISH_POINTS += 10 * weight
         # Broke through the line of support
         elif (is_below_line(current_price, line) and is_short_term_going_down(current_price, data)):

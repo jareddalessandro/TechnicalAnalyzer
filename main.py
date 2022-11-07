@@ -38,8 +38,7 @@ def main():
 
     user_defined_levels = get_user_defined_levels()
     now = int(time.time())
-    now = int('1667581200') # 11/4 1200am
-
+    
     market_open = get_market_open_time()
 
     previous_one_min = (now - 12060) # 201 mins in the past, which will pull 200 entries for 1 min
@@ -63,9 +62,9 @@ def main():
 
         current_price = client.quote(symbol=SYMBOL) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
         current_price = float(current_price['c'])
-        current_price = 371.28
+        
 
-        print('Current Price:', current_price)
+
 
         if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
             print("ERROR: Houston we have a problem obtaining candle data from Finnhub.")
@@ -73,7 +72,9 @@ def main():
             print('------------------------------------------')
             print("SUCCESS: Obtained candle data from Finnhub")
 
+
         #candle_count = len(sixty_min_candles['c']) # Get the count of how many candles we have
+        print('Current Price:', current_price)
 
         
         # Create an np ndarray to be used by TA-LIB in OHLCV format
@@ -98,13 +99,13 @@ def main():
             'close': np.array(sixty_min_candles['c']),
             'volume': np.array(sixty_min_candles['v'])
         }
-        #intra_day_data = {
-        #    'open': np.array(intra_day_min_candles['o']),
-        #    'high': np.array(intra_day_min_candles['h']),
-        #    'low': np.array(intra_day_min_candles['l']),
-        #    'close': np.array(intra_day_min_candles['c']),
-        #    'volume': np.array(intra_day_min_candles['v'])
-        #}
+        intra_day_data = {
+            'open': np.array(intra_day_min_candles['o']),
+            'high': np.array(intra_day_min_candles['h']),
+            'low': np.array(intra_day_min_candles['l']),
+            'close': np.array(intra_day_min_candles['c']),
+            'volume': np.array(intra_day_min_candles['v'])
+        }
 
         analysis = ''
         # Analyze indicator values and set points        
@@ -128,6 +129,8 @@ def main():
         one_min_ema_200, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_200(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         five_min_ema_200, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_200(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.4)
         sixty_min_ema_200, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_200(sixty_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 2)
+
+        BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_vwap(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         
         if len(user_defined_levels):
             BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
@@ -149,7 +152,7 @@ def main():
         print('sixty min ema 200', sixty_min_ema_200)
         print(analysis)
 
-        time.sleep(3)
+        time.sleep(4)
         
 
 
