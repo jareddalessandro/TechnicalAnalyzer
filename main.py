@@ -43,7 +43,7 @@ def main():
     TEST_MODE = False
     FINNHUB_KEY = configs.get('FINNHUB_KEY').data
     SYMBOL = configs.get('SYMBOL').data
-
+    user_defined_levels = []
     #user_defined_levels = get_user_defined_levels()
     now = int(time.time())
     #now = 1669154400
@@ -138,8 +138,8 @@ def main():
 
         analysis = ''
         # Analyze indicator values and set points        
-        one_range_low, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
-        one_range_high, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
+        range_low_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
+        range_high_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
 
         one_min_rsi, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_rsi(one_min_data, BULLISH_POINTS, BEARISH_POINTS, analysis)
         five_min_rsi, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_rsi(five_min_data, BULLISH_POINTS, BEARISH_POINTS, analysis)
@@ -161,19 +161,19 @@ def main():
 
         BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_vwap(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         
-        #if len(user_defined_levels):
-        #    BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
-        #    BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
+        if len(user_defined_levels):
+            BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
+            BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
 
-        bearString = ' ' * int((40 + BEARISH_POINTS - BULLISH_POINTS))
-        bullString = ' ' * int((40 + BULLISH_POINTS - BEARISH_POINTS))
+        bearString = ' ' * int((50 + BEARISH_POINTS - BULLISH_POINTS))
+        bullString = ' ' * int((50 + BULLISH_POINTS - BEARISH_POINTS))
         
 
         os.system('cls')
         print('TICKER:', SYMBOL)
-        print(f"{Fore.YELLOW}CURRENT PRICE:", current_price)
-        print(f"{Fore.GREEN}BULL: ", BULLISH_POINTS)
-        print(f"{Fore.RED}BEAR: ", BEARISH_POINTS)
+        print(f"{Fore.YELLOW}CURRENT PRICE: {current_price}")
+        print(f"{Fore.GREEN}BULL: {BULLISH_POINTS}")
+        print(f"{Fore.RED}BEAR: {BEARISH_POINTS}")
         print("One_min_ema_9 ", one_min_ema_9)
         print("One_min_ema_50 ", one_min_ema_50)
         print('one_min_ema_120', one_min_ema_120)
@@ -185,6 +185,8 @@ def main():
         print('sixty min ema 50', sixty_min_ema_50)
         print('sixty min ema 120', sixty_min_ema_120)
         print('sixty min ema 200', sixty_min_ema_200)
+        print('Range Low 200 min: ', range_low_one_min)
+        print('Range High 200 min: ', range_high_one_min)
         print(analysis)
         print(f"{Fore.GREEN}{Back.GREEN}{bullString}" + f"{Fore.RED}{Back.RED}{bearString}")
         print(f"{Fore.GREEN}{Back.GREEN}{bullString}" + f"{Fore.RED}{Back.RED}{bearString}")

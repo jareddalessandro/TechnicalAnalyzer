@@ -119,7 +119,7 @@ def is_below_line(current_price, line):
 
 def is_close_to_line(current_price, line):
     sum = current_price - line
-    if (sum <= .30 and sum >= -.30):
+    if (sum <= .25 and sum >= -.25):
         return True
     else:
         return False
@@ -147,7 +147,7 @@ def get_range_high(data):
 # Check to see if current price is higher than last candle close
 def is_short_term_going_up(current_price, data):
     length = len(data['close'])
-    if current_price >= data['close'][length -1]:
+    if current_price > data['close'][length -1]:
         return True
     else:
         return False
@@ -155,7 +155,7 @@ def is_short_term_going_up(current_price, data):
 # Check to see if current price is higher than last candle close
 def is_short_term_going_down(current_price, data):
     length = len(data['close'])
-    if current_price <= data['close'][length -1]:
+    if current_price < data['close'][length -1]:
         return True
     else:
         return False
