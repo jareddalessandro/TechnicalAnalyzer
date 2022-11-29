@@ -60,7 +60,7 @@ def get_vwap(data):
     df['Cum_Vol'] = df['volume'].cumsum()
     df['Cum_Vol_Price'] = (df['volume'] * (df['high'] + df['low'] + df['close'] ) / 3).cumsum()
     df['VWAP'] = df['Cum_Vol_Price'] / df['Cum_Vol']
-    df['VWAP_High'] = df["VWAP"] + (df["VWAP"].std() * 2)
+    df['VWAP_High'] = df["VWAP"] + (df["VWAP"].std() * 2)  
     df['VWAP_Low'] = df["VWAP"] - (df["VWAP"].std() * 2)
 
     return round(df['VWAP'].iloc[-1], 3), round(df['VWAP_High'].iloc[-1], 3), round(df['VWAP_Low'].iloc[-1], 3)
