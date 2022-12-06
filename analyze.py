@@ -75,11 +75,11 @@ def analyze_user_defined_levels(levels, data, current_price, BULLISH_POINTS, BEA
     return BULLISH_POINTS, BEARISH_POINTS, analysis
 
 def analyze_vwap(data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1):
-    vwap, vwap_upper, vwap_lower = TA.get_vwap(data)
+    vwap, vwap_upper, vwap_lower = TA.get_vwap(data)    
     vwap, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
     vwap_upper, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap_upper, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
     vwap_lower, BULLISH_POINTS, BEARISH_POINTS, analysis = analyze_line(data, vwap_lower, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight)
-    return BULLISH_POINTS, BEARISH_POINTS, analysis
+    return vwap, vwap_upper, vwap_lower, BULLISH_POINTS, BEARISH_POINTS, analysis
 
 
 ############ Direction Behavior Helper Functions ##############

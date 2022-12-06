@@ -1,10 +1,10 @@
+# Version 0.9
 # Finnhub API Documentation: https://finnhub.io/docs/api/quote
 # TA-LIB Library https://github.com/mrjbq7/ta-lib
 # Use Finnhub for pricing queries and TA-Lib for technicals
 # For UTC timestamps: https://www.unixtimestamp.com/
 # TODO:
     # Use Alpaca markets for testing. https://app.alpaca.markets/paper/dashboard/overview
-    # Replace quote() for current_price with websocket
     # Add logic for rejection or support holds
     # Add macd
     # add price correlation analysis for dxy/vix
@@ -46,14 +46,7 @@ def main():
     SYMBOL = configs.get('SYMBOL').data
     user_defined_levels = []
     #user_defined_levels = get_user_defined_levels()
-    now = int(time.time())
-    #now = 1669394100
 
-    market_open = get_market_open_time()
-
-    previous_one_min = (now - 12060) # 201 mins in the past, which will pull 200 entries for 1 min
-    previous_five_min = (now - 60060) # 5 x 201 mins, but it will not pull that many entries given the number of 5min entries per trading day is 300, 141 not including pm
-    previous_sixty_min = (now - 1500060) # 60 x 60 x 200 seconds = will obtain 200 candles for hour data
 
     client = finnhub.Client(api_key=FINNHUB_KEY)
 
@@ -80,6 +73,15 @@ def main():
     time.sleep(3)
 
     while True:
+        now = int(time.time())
+        #now = 1669394100
+
+        market_open = get_market_open_time()
+
+        previous_one_min = (now - 12060) # 201 mins in the past, which will pull 200 entries for 1 min
+        previous_five_min = (now - 60060) # 5 x 201 mins, but it will not pull that many entries given the number of 5min entries per trading day is 300, 141 not including pm
+        previous_sixty_min = (now - 1500060) # 60 x 60 x 200 seconds = will obtain 200 candles for hour data
+
         # Reset
         BULLISH_POINTS = 0
         BEARISH_POINTS = 0
@@ -101,8 +103,6 @@ def main():
             sixty_min_candles = client.stock_candles(symbol=SYMBOL, resolution=60, _from=previous_sixty_min, to=now)
             intra_day_min_candles = client.stock_candles(symbol=SYMBOL, resolution=1, _from=market_open, to=now)
 
-            #current_price = client.quote(symbol=SYMBOL) # THIS IS NOT FAST, MAY REQUIRE WEBSOCKET, BUT MAY BE FAST ENOUGH FOR WHAT WE WANT
-            #current_price = float(current_price['c']) 
             #current_price = 402.19
 
             if one_min_candles['s'] != 'ok' or five_min_candles['s'] != 'ok':
@@ -144,12 +144,12 @@ def main():
                 'volume': np.array(intra_day_min_candles['v'])
             }
 
+
+
         analysis = ''
         # Analyze indicator values and set points        
-        range_low_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
-        range_high_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
-        range_low_five_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
-        range_high_five_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
+        range_low_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.0)
+        range_high_one_min, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.0)
         range_low_intraday, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_low(intra_day_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
         range_high_intraday, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_range_high(intra_day_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
 
@@ -171,7 +171,7 @@ def main():
         five_min_ema_200, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_200(five_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.4)
         sixty_min_ema_200, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_ema_200(sixty_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 2)
 
-        BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_vwap(one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, 1.2)
+        vwap, vwap_upper, vwap_lower, BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_vwap(intra_day_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=2)
         
         if len(user_defined_levels):
             BULLISH_POINTS, BEARISH_POINTS, analysis = Analysis.analyze_user_defined_levels(user_defined_levels, one_min_data, current_price, BULLISH_POINTS, BEARISH_POINTS, analysis, weight=1.2)
@@ -186,6 +186,8 @@ def main():
         print(f"{Fore.YELLOW}CURRENT PRICE: {current_price}")
         print(f"{Fore.GREEN}BULL: {BULLISH_POINTS}")
         print(f"{Fore.RED}BEAR: {BEARISH_POINTS}")
+        print(f"One_min_RSI ", one_min_rsi)
+        print(f"Five_min_RSI ", five_min_rsi)
         print("One_min_ema_9 ", one_min_ema_9)
         print("One_min_ema_50 ", one_min_ema_50)
         print('one_min_ema_120', one_min_ema_120) 
@@ -199,10 +201,11 @@ def main():
         print('sixty min ema 200', sixty_min_ema_200)
         print('Range Low 1 min: ', range_low_one_min)
         print('Range High 1 min: ', range_high_one_min)
-        print('Range Low 5 min: ', range_low_five_min)
-        print('Range High 5 min: ', range_high_five_min)
         print('Range Low Intraday: ', range_low_intraday)
         print('Range High Intraday: ', range_high_intraday)
+        print('VWAP: ', vwap)
+        print('VWAP Upper: ', vwap_upper)
+        print('VWAP Lower: ', vwap_lower)
         print(analysis)
         print(f"{Fore.GREEN}{Back.GREEN}{bullString}" + f"{Fore.RED}{Back.RED}{bearString}")
         print(f"{Fore.GREEN}{Back.GREEN}{bullString}" + f"{Fore.RED}{Back.RED}{bearString}")
@@ -256,7 +259,8 @@ def on_error(ws, error):
     time.sleep(5)
 
 def on_close(ws, message):
-    print("### closed ###") 
+    print("### closed ###")
+    
     
 
 def on_open(ws):

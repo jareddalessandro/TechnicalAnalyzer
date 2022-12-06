@@ -54,15 +54,17 @@ def get_macd(data):
     return round(macd[len(macd)-1], 4), round(macdsignal[len(macd)-1], 4), round(macdhist[len(macd)-1], 4)
 
 # Get Volume Weighted Average Price (VWAP) and Lower and Higher bands - two sigma lower and higher
-# This isn't giving the same results as TV and webull, maybe due to the method to calculate STD   
+# This isn't giving the same results as TV and webull, maybe due to the method to calculate STD 
 def get_vwap(data):
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data)    
     df['Cum_Vol'] = df['volume'].cumsum()
-    df['Cum_Vol_Price'] = (df['volume'] * (df['high'] + df['low'] + df['close'] ) / 3).cumsum()
+    df['Cum_Vol_Price'] = (df['volume'] * ((df['high'] + df['low'] + df['close']) / 3)).cumsum()
     df['VWAP'] = df['Cum_Vol_Price'] / df['Cum_Vol']
     df['VWAP_High'] = df["VWAP"] + (df["VWAP"].std() * 2)  
     df['VWAP_Low'] = df["VWAP"] - (df["VWAP"].std() * 2)
 
-    return round(df['VWAP'].iloc[-1], 3), round(df['VWAP_High'].iloc[-1], 3), round(df['VWAP_Low'].iloc[-1], 3)
+    candle_count = df['VWAP'].shape[0] - 14
+    
+    return round(df['VWAP'].iloc[candle_count], 3), round(df['VWAP_High'].iloc[candle_count], 3), round(df['VWAP_Low'].iloc[candle_count], 3)
 
         
